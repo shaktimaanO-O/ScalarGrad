@@ -91,12 +91,3 @@ This project demonstrates:
 
 This is an educational engine. It works with scalar values and is intentionally small, so it is not designed to replace libraries like PyTorch or TensorFlow.
 
-## Next Steps
-
-Good extensions:
-
-- Add more activation functions such as ReLU and sigmoid
-- Add optimizers such as momentum and Adam
-- Build a 2D neural network playground
-- Visualize loss curves and decision boundaries
-- Add a notebook tutorial explaining backpropagation step by step
