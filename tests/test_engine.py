@@ -23,6 +23,25 @@ def test_expression_backward():
     assert x.grad == 20.0
 
 
+def test_sigmoid_backward():
+    x = Value(0.0)
+    y = x.sigmoid()
+
+    y.backward()
+
+    assert y.data == 0.5
+    assert x.grad == 0.25
+
+
+def test_log_backward():
+    x = Value(2.0)
+    y = x.log()
+
+    y.backward()
+
+    assert x.grad == 0.5
+
+
 def test_mlp_has_parameters():
     model = MLP(3, [4, 4, 1])
 

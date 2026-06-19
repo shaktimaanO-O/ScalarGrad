@@ -1,56 +1,78 @@
 # ScalarGrad
 
-A tiny scalar-valued automatic differentiation engine and neural network library built from scratch in Python.
+ScalarGrad is a tiny scalar-valued automatic differentiation engine and neural-network library built from scratch in Python. It starts with a micrograd-style `Value` object, then extends it into MLP classifiers, binary cross entropy training, multiple optimizers, and reproducible visual experiments.
 
-This project is inspired by the core idea behind deep learning frameworks: build a computation graph during the forward pass, then apply backpropagation to compute gradients automatically.
+## Highlights
 
-## What This Project Contains
-
-- A `Value` class that supports scalar arithmetic and automatic differentiation
-- Reverse-mode backpropagation over a computation graph
-- Basic neural network modules: `Neuron`, `Layer`, and `MLP`
-- Optional Graphviz visualization for computation graphs
-- A small MLP training example on toy data
-- Basic tests for engine behavior and model training
+- Reverse-mode autodiff over scalar computation graphs
+- Neural-network modules: `Neuron`, `Layer`, `MLP`
+- Configurable activations: `tanh`, `relu`, `sigmoid`, `linear`
+- Binary MLP classifier with sigmoid probabilities and BCE loss
+- Optimizers: `SGD`, `Momentum`, `RMSProp`, `Adam`
+- XOR optimizer comparison with saved curves and decision boundary plot
+- Real-world Banknote Authentication classifier with deduped train/test split
+- Noisy XOR sanity check showing the model does not report perfect accuracy on contradictory labels
 
 ## Project Structure
 
 ```text
 scalargrad/
-  scalargrad/
-    engine.py        # scalar autograd engine
-    nn.py            # neuron, layer, and MLP classes
-    visualize.py     # computation graph visualization
-  examples/
-    train_mlp.py     # small training demo
-  tests/
-    test_engine.py   # basic correctness checks
-  requirements.txt
-  pyproject.toml
-  README.md
+  engine.py        # scalar autograd engine
+  nn.py            # Module, Neuron, Layer, MLP
+  classifier.py    # BinaryMLPClassifier and binary cross entropy
+  optim.py         # SGD, Momentum, RMSProp, Adam
+  datasets.py      # XOR, noisy XOR, banknote loading, splits, scaling
+  plotting.py      # decision boundary visualization
+  visualize.py     # Graphviz computation graph visualization
+examples/
+  train_mlp.py
+  compare_xor_optimizers.py
+  train_banknote.py
+  noisy_xor_sanity_check.py
+notebooks/
+  ScalarGrad.ipynb
+tests/
+  test_engine.py
+  test_classifier.py
+  test_optim.py
+data/
+  banknote_authentication.txt
 ```
 
 ## Quick Start
 
-Install dependencies:
-
 ```bash
 pip install -r requirements.txt
+python -m pytest
 ```
 
-Run the example:
+Run the original toy MLP demo:
 
 ```bash
 python examples/train_mlp.py
 ```
 
-Run tests:
+Compare optimizers on XOR and save plots/results:
 
 ```bash
-python -m pytest
+python examples/compare_xor_optimizers.py
 ```
 
-## Example
+Train on the UCI Banknote Authentication dataset:
+
+```bash
+python examples/train_banknote.py
+```
+
+Run the noisy XOR sanity check:
+
+```bash
+python examples/noisy_xor_sanity_check.py
+```
+
+Generated artifacts are written to `outputs/`, including CSV metrics and PNG plots.
+
+## Minimal Autograd Example
 
 ```python
 from scalargrad import Value
@@ -60,34 +82,46 @@ b = Value(-3.0)
 c = a * b + 10
 c.backward()
 
-print(c.data)
-print(a.grad)
-print(b.grad)
+print(c.data)  # 4.0
+print(a.grad)  # -3.0
+print(b.grad)  # 2.0
 ```
 
-## Training A Tiny Neural Network
+## Binary Classification Example
 
 ```python
-from scalargrad.nn import MLP
+import random
+from scalargrad import Adam, BinaryMLPClassifier
+from scalargrad.datasets import make_xor
 
-model = MLP(3, [4, 4, 1])
-x = [2.0, 3.0, -1.0]
-y = model(x)
+xs, ys = make_xor()
+random.seed(42)
+model = BinaryMLPClassifier(2, [4, 4], activation="tanh")
+optimizer = Adam(model.parameters(), lr=0.03)
+
+for _ in range(250):
+    loss = model.loss(xs, ys)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+print([model.predict(x) for x in xs])
 ```
 
-The example in `examples/train_mlp.py` trains a small MLP on four toy samples using mean squared error and gradient descent.
+## Results
 
-## Why This Matters
+On clean XOR, all optimizers reach 100% accuracy, but Adam, RMSProp, and Momentum converge faster than plain SGD. On noisy XOR with 25% intentionally flipped labels, accuracy saturates around 75%, which validates that the evaluation is not artificially inflated. On the deduplicated Banknote Authentication dataset, the Adam-trained MLP reaches very high test accuracy with a clean train/test split and train-only standardization.
 
-This project demonstrates:
+## Visual Results
 
-- how computation graphs are constructed
-- how local derivatives combine through the chain rule
-- how backpropagation computes gradients
-- how neural networks can be built from simple scalar operations
-- how gradient descent updates model parameters
+### XOR Optimizer Comparison
 
-## Limitations
+![XOR optimizer comparison](outputs/xor_optimizer_comparison.png)
 
-This is an educational engine. It works with scalar values and is intentionally small, so it is not designed to replace libraries like PyTorch or TensorFlow.
+### XOR Decision Boundary
 
+![XOR decision boundary](outputs/xor_decision_boundary.png)
+
+### Banknote Training Curves
+
+![Banknote Adam training curves](outputs/banknote_adam_training.png)

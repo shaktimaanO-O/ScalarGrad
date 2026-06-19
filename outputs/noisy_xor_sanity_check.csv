@@ -1,0 +1,2 @@
+dataset,noise_rate,final_loss,final_accuracy
+noisy_xor,0.25,0.5659442278234242,0.7425
